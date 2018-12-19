@@ -18,11 +18,11 @@ void udp_msg_sender(int fd, struct sockaddr* dst)
     {
         char buf[BUFF_LEN] = "TEST UDP MSG!\n";
         len = sizeof(*dst);
-        printf("client:%s\n",buf);  //打印自己发送的信息
+        printf("reply:%s\n",buf);  //打印自己发送的信息
         sendto(fd, buf, BUFF_LEN, 0, dst, len);
         memset(buf, 0, BUFF_LEN);
         recvfrom(fd, buf, BUFF_LEN, 0, (struct sockaddr*)&src, &len);  //接收来自server的信息
-        printf("server:%s\n",buf);
+        printf("recv:%s\n",buf);
         sleep(1);  //一秒发送一次消息
     }
 }
