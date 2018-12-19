@@ -16,7 +16,7 @@ void udp_msg_sender(int fd, struct sockaddr* dst)
     struct sockaddr_in src;
     while(1)
     {
-        char buf[BUFF_LEN] = "TEST UDP MSG!\n";
+        char buf[BUFF_LEN] = "hi\n";
         len = sizeof(*dst);
         printf("reply:%s\n",buf);  //打印自己发送的信息
         sendto(fd, buf, BUFF_LEN, 0, dst, len);
@@ -47,8 +47,8 @@ int main(int argc, char* argv[])
     memset(&ser_addr, 0, sizeof(ser_addr));
     ser_addr.sin_family = AF_INET;
     //ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
-    ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);  //注意网络序转换
-    ser_addr.sin_port = htons(SERVER_PORT);  //注意网络序转换
+    ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);  
+    ser_addr.sin_port = htons(SERVER_PORT);  
 
     udp_msg_sender(client_fd, (struct sockaddr*)&ser_addr);
 
