@@ -23,10 +23,10 @@ void handle_udp_msg(int fd)
             printf("recieve data fail!\n");
             return;
         }
-        printf("client:%s\n",buf);  //打印client发过来的信息
+        printf("recv:%s\n",buf);  //打印client发过来的信息
         memset(buf, 0, BUFF_LEN);
         sprintf(buf, "I have recieved %d bytes data!\n", count);  //回复client
-        printf("server:%s\n",buf);  //打印自己发送的信息给
+        printf("reply:%s\n",buf);  //打印自己发送的信息给
         sendto(fd, buf, BUFF_LEN, 0, (struct sockaddr*)&clent_addr, len);  //发送信息给client，注意使用了clent_addr结构体指针
 
     }
