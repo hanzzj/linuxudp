@@ -150,6 +150,31 @@ int Replyhi()
 	return 0;
 }
 
+int StartUdp(int argc ,char *argv[]){
+	int pid;
+	pid-fork();
+	pid = fork();
+	if (pid < 0)
+	{
+		/* error occurred */
+
+		fprintf(stderr, "Fork Failed!");
+		exit(-1);
+	}
+	else if (pid == 0)
+	{
+		/*	 child process 	*/
+
+		udpserver();
+		printf("Reply udpserver Service Started!\n");
+	}
+	else
+	{
+		/* 	parent process	 */
+		printf("Please input udphello...\n");
+	}
+}
+
 int StartReplyhi(int argc, char *argv[])
 {
 	int pid;
@@ -228,7 +253,7 @@ void handle_udp_msg(int fd)
 }
 
 
- void udp_msg_sender(int fd, struct sockaddr* dst)
+ void Udp_msg_sender(int fd, struct sockaddr* dst)
 {
     socklen_t len;
     struct sockaddr_in src;
@@ -255,7 +280,7 @@ void handle_udp_msg(int fd)
 */
 
 
-int udpclient(int argc, char* argv[])
+int Udpclient(int argc, char* argv[])
 {
     int client_fd;
     struct sockaddr_in ser_addr;
@@ -365,47 +390,25 @@ int BringUpNetInterface()
 #endif
 
 	    if (ifr->ifr_addr.sa_family == AF_INET)
-
         {
-
             strncpy(ifreq.ifr_name, ifr->ifr_name,sizeof(ifreq.ifr_name));
-
             if (ioctl (SockFD, SIOCGIFHWADDR, &ifreq) < 0)
-
             {
-
               printf("SIOCGIFHWADDR(%s): %m\n", ifreq.ifr_name);
-
               return 0;
-
             }
 
- 
-
-            printf("Ip Address %s\n", inet_ntoa( ( (struct sockaddr_in *)  &ifr->ifr_addr)->sin_addr)); 
-
+           printf("Ip Address %s\n", inet_ntoa( ( (struct sockaddr_in *)  &ifr->ifr_addr)->sin_addr)); 
             printf("Device %s -> Ethernet %02x:%02x:%02x:%02x:%02x:%02x\n", ifreq.ifr_name,
-
-                (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[0],
-
+               (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[0],
                 (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[1],
-
                 (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[2],
-
                 (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[3],
-
                 (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[4],
-
                 (int) ((unsigned char *) &ifreq.ifr_hwaddr.sa_data)[5]);
-
         }
-
     }
-
- 
-
     return 0;
-
 }
 
 int main()
@@ -413,21 +416,14 @@ int main()
 {
 
     BringUpNetInterface();
-
     PrintMenuOS();
-
     SetPrompt("MenuOS>>");
-
     MenuConfig("version","MenuOS V1.0(Based on Linux 3.18.6)",NULL);
-
     MenuConfig("quit","Quit from MenuOS",Quit);
-
     MenuConfig("replyhi", "Reply hi TCP Service", StartReplyhi);
-
     MenuConfig("hello", "Hello TCP Client", Hello);
-    MenuConfig("udpclient","hello udp client",udpclient);
-    MenuConfig("udpserver","hello udp server", udpserver);
-
+    MenuConfig("udpserver","udp start",StartUdp);
+    MenuConfig("udphello","hello udp ", udpclient);
     ExecuteMenu();
 
 }
