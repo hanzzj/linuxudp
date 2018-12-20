@@ -12,7 +12,7 @@ UDP的socket既能读，也能写，使用全双工的机制进行通信。
 之后就可以调用sendto()来进行发送信息，并使用recvfrom()函数接收来自server的信息。
 在传输完成之后就可以调用close()方法来关闭接口。
 同理，对于server也是这样处理，但是多了一个调用bind()方法来监听端口的过程，之后也是进行发送接收。
-集成的话参考lab3就可以了。可以把lab3的全部文件复制过来，然后在main.c中添加上udp客户端和服务器端两个函数即可。
+集成的话参考lab3就可以了。可以把lab3的全部文件复制过来，然后在main.c中添加上udp客户端和服务器端两个函数即可。这里要注意Linux下fork子进程的判断条件，再fork一次产生子进程对应的pid并不是一直不变的，在调用了别的函数操作之后，即使没有修改pid的代码，pid也已经由0变为了1。还有，在使用bind方法帮点端口时不要急于绑定IP，要在调用时传参才不会出问题。（玄学）
 
  复制命令： git clone https://github.com/hanzzj/linuxudp.git
  cd linuxudp -> ls -> gcc client.c -o cilent ->gcc -server.c -o server -> ./server ->水平分割终端 ->./client
