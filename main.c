@@ -280,7 +280,7 @@ void handle_udp_msg(int fd)
 */
 
 
-int Udpclient(int argc, char* argv[])
+int udpclient(int argc, char* argv[])
 {
     int client_fd;
     struct sockaddr_in ser_addr;
