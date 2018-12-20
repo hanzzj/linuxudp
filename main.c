@@ -314,7 +314,7 @@ int udpserver(int argc, char* argv[])
     }
     memset(&ser_addr, 0, sizeof(ser_addr));
     ser_addr.sin_family = AF_INET;
-    ser_addr.sin_addr.s_addr = htonl(SERVER_IP); //IP地址，需要进行网络序转换，INADDR_ANY：本地地址
+    ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP); //IP地址，需要进行网络序转换，INADDR_ANY：本地地址
     ser_addr.sin_port = htons(SERVER_PORT);  //端口号，需要网络序转换
     ret = bind(server_fd, (struct sockaddr*)&ser_addr, sizeof(ser_addr));
     if(ret =-1)
