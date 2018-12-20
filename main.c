@@ -316,11 +316,11 @@ int udpserver(int argc, char* argv[])
     ser_addr.sin_addr.s_addr = htonl(INADDR_ANY); //IP地址，需要进行网络序转换，INADDR_ANY：本地地址
     ser_addr.sin_port = htons(SERVER_PORT);  //端口号，需要网络序转换
     ret = bind(server_fd, (struct sockaddr*)&ser_addr, sizeof(ser_addr));
-    if(ret < 0)
+    /*if(ret < 0)
     {
         printf("socket bind fail!\n");
         return -1;
-    }
+    }*/
     handle_udp_msg(server_fd);   //处理接收到的数据
     close(server_fd);
     return 0;
