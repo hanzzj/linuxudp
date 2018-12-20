@@ -3,7 +3,6 @@
 #include <time.h>
 #include "menu.h"
 #define FONTSIZE 10
-
 int PrintMenuOS()
 {
     int i, j;
@@ -131,7 +130,6 @@ int Quit(int argc, char *argv[])
     /* add XXX clean ops */
 
 }
-
 
 #include"syswrapper.h"
 #define MAX_CONNECT_QUEUE   1024
@@ -267,8 +265,8 @@ int udpclient(int argc, char* argv[])
     ser_addr.sin_family = AF_INET;
     //ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);  
-    ser_addr.sin_port = htons(SERVER_PORT);  
-    udp_msg_sender(client_fd, (struct sockaddr*)&ser_addr);
+    ser_addr.sin_port = htons(PORT);  
+    udp_msg_sender(client_fd, (struct sockaddr*)&IP_ADDR);
     close(client_fd);
     return 0;
 
