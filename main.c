@@ -198,6 +198,10 @@ int Hello(int argc, char *argv[])
 #include <unistd.h>
 #include <stdio.h>
 #define MAX_IFS 64
+#define SERVER_PORT 5001
+#define SERVER_IP "127.0.0.1"
+#define BUFF_LEN 1024
+
 
 void handle_udp_msg(int fd)
 {
@@ -265,7 +269,7 @@ int udpclient(int argc, char* argv[])
     ser_addr.sin_family = AF_INET;
     //ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     ser_addr.sin_addr.s_addr = htonl(INADDR_ANY);  
-    ser_addr.sin_port = htons(PORT);  
+    ser_addr.sin_port = htons(SERVER_PORT);  
     udp_msg_sender(client_fd, (struct sockaddr*)&IP_ADDR);
     close(client_fd);
     return 0;
