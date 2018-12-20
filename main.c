@@ -253,7 +253,7 @@ void handle_udp_msg(int fd)
 }
 
 
- void Udp_msg_sender(int fd, struct sockaddr* dst)
+ void udp_msg_sender(int fd, struct sockaddr* dst)
 {
     socklen_t len;
     struct sockaddr_in src;
