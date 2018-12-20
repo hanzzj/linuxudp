@@ -12,7 +12,9 @@ UDP的socket既能读，也能写，使用全双工的机制进行通信。
 之后就可以调用sendto()来进行发送信息，并使用recvfrom()函数接收来自server的信息。
 在传输完成之后就可以调用close()方法来关闭接口。
 同理，对于server也是这样处理，但是多了一个调用bind()方法来监听端口的过程，之后也是进行发送接收。
+集成的话参考lab3就可以了。可以把lab3的全部文件复制过来，然后在main.c中添加上udp客户端和服务器端两个函数即可。
 
  复制命令： git clone https://github.com/hanzzj/linuxudp.git
  cd linuxudp -> ls -> gcc client.c -o cilent ->gcc -server.c -o server -> ./server ->水平分割终端 ->./client
+ 集成到menuos之后，就可以使用 udpclient和udpserver来调用这两个模块。
 
