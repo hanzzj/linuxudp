@@ -223,8 +223,8 @@ int Hello(int argc, char *argv[])
 #include <unistd.h>
 #include <stdio.h>
 #define MAX_IFS 64
-#define SERVER_PORT 8888
-#define SERVER_IP "172.0.5.182"
+#define SERVER_PORT 5001
+#define SERVER_IP "127.0.0.1"
 #define BUFF_LEN 1024
 
 
