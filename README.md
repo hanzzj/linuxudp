@@ -63,6 +63,16 @@ return __ip_append_data(sk, fl4, &sk->sk_write_queue, &inet->cork.base,
  这里调用了系统信息来确定发包时构造的信息。
  保存缓冲区的步骤：skb = skb_peek_tail(queue); 
  这里skb有两种情况，如果队列为空， 则skb = NULL，否则就是尾部skb的指针。后面会在进行处理。
+ 对于UDP报文，若数据长度大于MTU，并且需要进行分片，则需要通过分片机制进行处理。接下来使用了一个分支判断，代码如下：
+ if (((length > mtu) || (skb && skb_is_gso(skb))) &&	    (sk->sk_protocol == IPPROTO_UDP) &&	    (rt->dst.dev->features & NETIF_F_UFO) && !rt->dst.header_len)
+ {      err = ip_ufo_append_data(sk, queue, getfrag, from, length,				
+        hh_len, fragheaderlen, transhdrlen,					 maxfraglen, flags);		
+	if (err)			
+	  goto error;		
+	return 0;	}
+分支的判断条件主要有：数据长度是否大于mtu?skb是否为空？skb_is_gso用来获取当前系统分片长度和分段长度。协议是否为UDP？目的dst信息是否完整，等等，若有不成功的，则返回错误 goto err。
+
+
 
 
               
