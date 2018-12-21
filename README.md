@@ -17,4 +17,54 @@ UDP的socket既能读，也能写，使用全双工的机制进行通信。
  复制命令： git clone https://github.com/hanzzj/linuxudp.git
  cd linuxudp -> ls -> gcc client.c -o cilent ->gcc -server.c -o server -> ./server ->水平分割终端 ->./client
  集成到menuos之后，就可以使用 udpclient和udpserver来调用这两个模块。
+ 
+ 
+ 关于UDP sendto发送数据过程：
+ 据网上资料得知，linux下UDP发送数据包并不是有数据就发送，而是使用了cork机制，即UDP相关的数据经常会存储在一个名为cork的变量中，等到了数据量足够时再发送，这样可以减轻工作量。
+ UDP发送数据包的过程首先是在udp_sendmsg调用udp_send_skb,ip_append_data方法，查询可知该函数是IP层提供的UDP和RAW Socket的发包函数，这个函数在TCP中也用于发送ACK和RST报文，ip_send_reply最终也会调用此函数。
+ 将数据拷贝到适合的skb( Struct sk_buffer，数据缓冲区)中，可能有两种情况: 放入skb的线性数据存储区(skb->data)中或者放入skb_shared_info的分片(frag)中。
+ 具体思路流程如下：
+ 首先在UDP.C文件1070行中调用ip_append_data方法来传输数据，使用了err来判断处理错误。
+ err = ip_append_data(sk, fl4, getfrag, msg->msg_iov, ulen,
+		     sizeof(struct udphdr), &ipc, &rt,
+		     corkreq ? msg->msg_flags|MSG_MORE : msg->msg_flags);
+  
+ 而ip_append_data方法的定义是在ip_output.c文件中定义的，头部分具体定义内容如下：
+ int ip_append_data(struct sock *sk, struct flowi4 *fl4,
+		   int getfrag(void *from, char *to, int offset, int len,int odd, struct sk_buff *skb),
+		   void *from, int length, int transhdrlen,
+		   struct ipcm_cookie *ipc, struct rtable **rtp,
+	    unsigned int flags)
+     
+ 函数的参数含义：*sk 是指向之前创建的socket，包括IP,端口号等信息，     
+              flowi4是匹配源，当作key，去路由缓存或者路由表查具体路由信息，结果放在fibresult 。
+              下一个是函数getfrag的返回值来做参数。这个函数指针的具体操作是将数据复制到缓冲区，即传递给*skb对应内存区域。
+               *from :指向来源数据 
+              int length : 数据长度
+              int transhdrlen : 传输层首部长度，同时也是标志是否为第一个fragment的标志
+              struct ipcm_cookie *ipc 和struct rtable **rpt 主要是对路由信息的操作，无关紧要。 
+              unsigned int flags : 处理标志，主要是MSG_PROBE和MSG_MORE，对MTU进行探测，确定传输过程要不要分组，后续是否还有数据发送。
+              
+函数内部具体流程如下：
+if (flags&MSG_PROBE）return 0; //首先判断是否进行了MTU探测，若没有，就直接返回，因为不能确定传输数据包大小
+if (skb_queue_empty(&sk->sk_write_queue)) {  //判断输出队列是否为空
+	err = ip_setup_cork(sk, &inet->cork.base, ipc, rtp);//如果传输控制块(sock)的的输出队列为空，则需要设置一些临时信息，如果不为空，那就可以使用上次发送时的相关信息，也就是用来填充的字节
+if (err)
+		return err;
+	} else {
+		transhdrlen = 0;
+	}
+return __ip_append_data(sk, fl4, &sk->sk_write_queue, &inet->cork.base,
+				sk_page_frag(sk), getfrag,
+				from, length, transhdrlen, flags);
+    
+ 等到准备工作完成以后，再调用__ip_append_data进行处理。处理过程大致如下：
+ mtu = cork->fragsize; /*获取链路层首部的长度*/.     hh_len = LL_RESERVED_SPACE(rt->dst.dev);  /*获取IP首部(包括IP选项)的长度*/     fragheaderlen = sizeof(struct iphdr) + (opt ? opt->optlen : 0);    /*IP数据包中数据的最大长度，通过mtu计算，并进行8字节对齐，目的是提升计算效率*/     maxfraglen = ((mtu - fragheaderlen) & ~7) + fragheaderlen;    /*输出的报文长度不能超过IP数据报能容纳的最大长度(64K)*/
+ 这里调用了系统信息来确定发包时构造的信息。
+ 保存缓冲区的步骤：skb = skb_peek_tail(queue); 
+ 这里skb有两种情况，如果队列为空， 则skb = NULL，否则就是尾部skb的指针。后面会在进行处理。
 
+
+              
+              
+              
