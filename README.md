@@ -20,7 +20,7 @@ UDP的socket既能读，也能写，使用全双工的机制进行通信。
  
  
  关于UDP sendto发送数据过程：
- 据网上资料得知，linux下UDP发送数据包并不是有数据就发送，而是使用了cork机制，即UDP相关的数据经常会存储在一个名为cork的变量中，等到了数据量足够时再发送，这样可以减轻工作量。
+ 据网上资料得知，linux下UDP发送数据包并不是有数据就发送，而是使用了cork机制，即UDP相关的数据经常会存储在一个名为cork的变量中，等到了数据量足够时再发送，这样可以减轻工作量，提高工作效率。
  UDP发送数据包的过程首先是在udp_sendmsg调用udp_send_skb,ip_append_data方法，查询可知该函数是IP层提供的UDP和RAW Socket的发包函数，这个函数在TCP中也用于发送ACK和RST报文，ip_send_reply最终也会调用此函数。
  将数据拷贝到适合的skb( Struct sk_buffer，数据缓冲区)中，可能有两种情况: 放入skb的线性数据存储区(skb->data)中或者放入skb_shared_info的分片(frag)中。
  具体思路流程如下：
@@ -72,6 +72,20 @@ return __ip_append_data(sk, fl4, &sk->sk_write_queue, &inet->cork.base,
 	return 0;	}
 分支的判断条件主要有：数据长度是否大于mtu?skb是否为空？skb_is_gso用来获取当前系统分片长度和分段长度。协议是否为UDP？目的dst信息是否完整，等等，若有不成功的，则返回错误 goto err。
 再往下走，就是if (!skb)	goto alloc_new_skb;的判断分支，它主要是判断skb缓冲区是否存在，不存在的调用分配函数进行分配。之后就可以根据MTU（最大传输单元）和skb缓冲区中数据长度skb->len。比较情况进行处理。这里使用了一个循环来对数据进行处理：
+   while (length > 0) {           
+计算当前skb中还能放多少数据，通过mtu-skb的数据长度计算，如果skb的剩余空间不足以存放完这次需要放入的数据长度length，则将当前skb填满即可，剩余数据留下一个skb发送：   
+copy = mtu - skb->len;       .           其中maxfraglen是8字节对齐后的mtu         
+if (copy < length)             copy = maxfraglen - skb->len   skb_prev = skb;   
+     
+ 如果当前skb中的数据本身就已经大于MTU了，那就需要新分配skb来容纳新数据了                             
+由于原有的skb数据区空间不足，而需要分配新skb，计算不足的大小，这次需要新分配的数据区大小length加上原来skb中不足的大小，为新skb需要分配的数据区大小                     datalen = length + fraggap;                 
+如果新skb需要分配的数据区大小超过了mtu，那这次还是只能分配mtu的大小，剩余数据需要通过循环分配新skb来容纳。
+数据报分片大小需要加上IP首部的长度*                    
+fraglen = datalen + fragheaderlen;        /*再加上IPsec相关的头部长度*/              
+如果设置了MSG_MORE标记，表明需要等待新数据，一直到超过mtu为止，则设置分配空间大小为mtu。
+根据是否存在传输层首部，确定分配skb的方法。如果存在，则说明该分片为分片组中的第一个分片，那就需要考虑更多的情况，比如:发送是否超时、是否发生未处理的致命错误。   当不存在传输层首部时，说明不是第一个分片，则不需考虑这些情况。                       .                     
+/*在skb中预留存放二层首部、三层首部和数据的空间*/176.                     data = skb_put(skb, fraglen + exthdrlen);177.                     /*设置IP头指针位置*/178.                     skb_set_network_header(skb, exthdrlen);179.                     /*计算传输层头部长度*/                     skb->transport_header = (skb->network_header +181.                                  fragheaderlen);182.                     /*计算数据存入的位置*/183.                     data += fragheaderlen + exthdrlen;184.                     /*185.                      * 如果上一个skb的数据大于mtu(8字节对齐)，那么需要将上一个skb中超出的数据和传输层首部186.                      * 复制到当前的skb中，并重新计算校验和。1  if (fraggap) {skb->csum = skb_copy_and_csum_bits( skb_prev, maxfraglen,data + transhdrlen, fraggap, 0);                        /*上一个skb的校验和也需要重新计算*/                        skb_prev->csum = csum_sub(skb_prev->csum,194.                                      skb->csum);                         /*拷贝新数据后，再次移动data指针，更新数据写入的位置*/
+此后就是一些格式调整和硬件支持相关信息，这里就不再一一叙述了。
 
 
 
